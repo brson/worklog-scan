@@ -63,10 +63,10 @@ fn analyze_prediction(entries: &[Entry]) -> Result<()> {
         if let Some(ref pr) = entry.pred {
             let Prediction(pr_pl, pr_pn, ac_pl, ac_pn) = *pr;
             predictions += 1;
-            total_pr_pl += pr_pl;
-            total_pr_pn += pr_pn;
-            total_ac_pl += ac_pl;
-            total_ac_pn += ac_pn;
+            total_pr_pl += pr_pl as u64;
+            total_pr_pn += pr_pn as u64;
+            total_ac_pl += ac_pl as u64;
+            total_ac_pn += ac_pn as u64;
             pr_pls.push(pr_pl);
             pr_pns.push(pr_pn);
             ac_pls.push(ac_pl);
