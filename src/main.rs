@@ -48,6 +48,34 @@ fn process_file(file: &str) -> Result<()> {
 }
 
 fn analyze_prediction(entries: &[Entry]) -> Result<()> {
+
+    let stats = basic_stats(entries);
+
+    println!("Pleasure predicting");
+    println!("===================");
+    println!("");
+    println!("predictions: {}", stats.predictions);
+    println!("median prediction: {} pr_pl / {} pr_pn : {} ac_pl / {} ac_pn",
+             stats.med_pr_pl, stats.med_pr_pn, stats.med_ac_pl, stats.med_ac_pn);
+    println!("mean prediction: {} pr_pl / {} pr_pn : {} ac_pl / {} ac_pn",
+             stats.mean_pr_pl, stats.mean_pr_pn, stats.mean_ac_pl, stats.mean_ac_pn);
+
+    Ok(())
+}
+
+struct BasicStats {
+    predictions: usize,
+    med_pr_pl: u8,
+    med_pr_pn: u8,
+    med_ac_pl: u8,
+    med_ac_pn: u8,
+    mean_pr_pl: f32,
+    mean_pr_pn: f32,
+    mean_ac_pl: f32,
+    mean_ac_pn: f32,
+}
+
+fn basic_stats(entries: &[Entry]) -> BasicStats {
     let mut predictions = 0;
     let mut total_pr_pl = 0;
     let mut total_pr_pn = 0;
@@ -90,16 +118,17 @@ fn analyze_prediction(entries: &[Entry]) -> Result<()> {
     let mean_ac_pl = total_ac_pl as f32 / predictions as f32;
     let mean_ac_pn = total_ac_pn as f32 / predictions as f32;
 
-    println!("Pleasure predicting");
-    println!("===================");
-    println!("");
-    println!("predictions: {}", predictions);
-    println!("median prediction: {} pr_pl / {} pr_pn : {} ac_pl / {} ac_pn",
-             med_pr_pl, med_pr_pn, med_ac_pl, med_ac_pn);
-    println!("mean prediction: {} pr_pl / {} pr_pn : {} ac_pl / {} ac_pn",
-             mean_pr_pl, mean_pr_pn, mean_ac_pl, mean_ac_pn);
-
-    Ok(())
+    BasicStats {
+        predictions,
+        med_pr_pl,
+        med_pr_pn,
+        med_ac_pl,
+        med_ac_pn,
+        mean_pr_pl,
+        mean_pr_pn,
+        mean_ac_pl,
+        mean_ac_pn,
+    }
 }
 
 // Determine what each individual line represents
