@@ -6,6 +6,7 @@ authors = ["Brian Anderson <banderson@mozilla.com>"]
 [dependencies]
 error-chain = "0.8"
 regex = "0.2.1"
+chrono = "0.3"
 
 [profile.dev]
 opt-level = 1

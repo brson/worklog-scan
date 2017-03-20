@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate error_chain;
 extern crate regex;
+extern crate chrono;
 
 use std::cell::RefCell;
 use std::mem;
@@ -50,10 +51,31 @@ fn process_file(file: &str) -> Result<()> {
 fn analyze_prediction(entries: &[Entry]) -> Result<()> {
 
     let stats = basic_stats(entries);
+    let weekly = weekly_stats(entries);
 
     println!("Pleasure predicting");
     println!("===================");
-    println!("");
+
+    println!();
+    println!("Weekly");
+    println!("------");
+    println!();
+
+    for week_stats in weekly {
+        let ref stats = week_stats.stats;
+        println!("{}", week_stats.week);
+        println!("predictions: {}", stats.predictions);
+        println!("median prediction: {} pr_pl / {} pr_pn : {} ac_pl / {} ac_pn",
+                 stats.med_pr_pl, stats.med_pr_pn, stats.med_ac_pl, stats.med_ac_pn);
+        println!("mean prediction: {} pr_pl / {} pr_pn : {} ac_pl / {} ac_pn",
+                 stats.mean_pr_pl, stats.mean_pr_pn, stats.mean_ac_pl, stats.mean_ac_pn);
+        println!();
+    }
+    
+    println!();
+    println!("Totals");
+    println!("------");
+    println!();
     println!("predictions: {}", stats.predictions);
     println!("median prediction: {} pr_pl / {} pr_pn : {} ac_pl / {} ac_pn",
              stats.med_pr_pl, stats.med_pr_pn, stats.med_ac_pl, stats.med_ac_pn);
@@ -102,6 +124,20 @@ fn basic_stats(entries: &[Entry]) -> BasicStats {
         }
     }
 
+    if predictions == 0 {
+        return BasicStats {
+            predictions,
+            med_pr_pl: 0,
+            med_pr_pn: 0,
+            med_ac_pl: 0,
+            med_ac_pn: 0,
+            mean_pr_pl: 0.0,
+            mean_pr_pn: 0.0,
+            mean_ac_pl: 0.0,
+            mean_ac_pn: 0.0,
+        };
+    }
+
     pr_pls.sort();
     pr_pns.sort();
     ac_pls.sort();
@@ -129,6 +165,64 @@ fn basic_stats(entries: &[Entry]) -> BasicStats {
         mean_ac_pl,
         mean_ac_pn,
     }
+}
+
+struct WeeklyStats {
+    week: String,
+    stats: BasicStats,
+}
+
+fn weekly_stats(entries: &[Entry]) -> Vec<WeeklyStats> {
+    let mut ranges = vec![];
+
+    let mut cur_week = String::new();
+
+    let mut idx1 = 0;
+    let mut idx2 = 0;
+
+    // Find the ranges of entries that represent each week
+    println!("{}", entries.len());
+    for (idx, entry) in entries.iter().enumerate() {
+        let this_week = week_of(&entry.date);
+        if this_week != cur_week {
+            if idx1 != 0 && idx2 != 0 {
+                ranges.push(idx1 .. idx2);
+            }
+
+            cur_week = this_week;
+            idx1 = idx;
+            idx2 = idx;
+        } else {
+            idx2 += 1;
+        }
+    }
+
+    if idx1 != idx2 {
+        ranges.push(idx1 .. idx2);
+    }
+    println!("oo");
+
+    ranges.into_iter().rev().map(|range| {
+        println!("{:?}", range);
+        let entries = &entries[range];
+        println!("{}", entries.len());
+        let week = week_of(&entries[0].date);
+        println!("XXXX");
+        let stats = basic_stats(entries);
+        println!("YYYY");
+        WeeklyStats { week, stats }
+    }).collect()
+}
+
+fn week_of(date: &str) -> String {
+    use chrono::*;
+    let default = NaiveDate::from_ymd(2017, 1, 1);
+    let dt: ParseResult<NaiveDate> = NaiveDate::parse_from_str(date, "%Y-%m-%d");
+    let dt = dt.unwrap_or(default);
+    let dt = Local.from_local_date(&dt).unwrap();
+    let (_, week, _) = dt.isoweekdate();
+    let year = dt.year();
+    format!("{}, wk {}", year, week)
 }
 
 // Determine what each individual line represents
