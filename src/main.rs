@@ -41,9 +41,12 @@ fn process_file(file: &str) -> Result<()> {
     let raw_entries = lines.map(|ref s| line_to_raw_entry(s));
     let raw_entries: Vec<_> = raw_entries.collect();
 
-    let entries = raw_to_entries(raw_entries);
-
+    println!();
+    
+    let entries = raw_to_entries(&raw_entries);
     analyze_prediction(&entries)?;
+
+    println!();
 
     Ok(())
 }
@@ -181,7 +184,6 @@ fn weekly_stats(entries: &[Entry]) -> Vec<WeeklyStats> {
     let mut idx2 = 0;
 
     // Find the ranges of entries that represent each week
-    println!("{}", entries.len());
     for (idx, entry) in entries.iter().enumerate() {
         let this_week = week_of(&entry.date);
         if this_week != cur_week {
@@ -200,16 +202,11 @@ fn weekly_stats(entries: &[Entry]) -> Vec<WeeklyStats> {
     if idx1 != idx2 {
         ranges.push(idx1 .. idx2);
     }
-    println!("oo");
 
     ranges.into_iter().rev().map(|range| {
-        println!("{:?}", range);
         let entries = &entries[range];
-        println!("{}", entries.len());
         let week = week_of(&entries[0].date);
-        println!("XXXX");
         let stats = basic_stats(entries);
-        println!("YYYY");
         WeeklyStats { week, stats }
     }).collect()
 }
@@ -227,6 +224,14 @@ fn week_of(date: &str) -> String {
 
 // Determine what each individual line represents
 fn line_to_raw_entry(line: &str) -> RawEntry {
+    if line.to_lowercase().contains("clockin") {
+        return RawEntry::ClockIn;
+    }
+
+    if line.to_lowercase().contains("clockout") {
+        return RawEntry::ClockOut;
+    }
+
     if line.starts_with("# ") {
         let line = &line[2..];
         if let Some(date) = parse_date(line) {
@@ -259,6 +264,8 @@ enum RawEntry {
     Time(u8, u8), // hour (0-23), minute
     // predictud pleasure, pain, actual pleasure, pain
     Prediction(u8, u8, u8, u8),
+    ClockIn,
+    ClockOut,
 }
 
 fn parse_date(s: &str) -> Option<String> {
@@ -318,7 +325,7 @@ struct Entry {
     time: Option<Time>,
 }
 
-fn raw_to_entries(raws: Vec<RawEntry>) -> Vec<Entry> {
+fn raw_to_entries(raws: &[RawEntry]) -> Vec<Entry> {
     let date = RefCell::new("2099-01-01".to_string());
 
     let new_entry = || Entry {
@@ -331,18 +338,18 @@ fn raw_to_entries(raws: Vec<RawEntry>) -> Vec<Entry> {
 
     let mut next_entry = new_entry();
 
-    let mut entries: Vec<_> = raws.into_iter().filter_map(|raw| {
-        match raw {
+    let mut entries: Vec<_> = raws.iter().filter_map(|raw| {
+        match *raw {
             RawEntry::Junk(_) => None,
-            RawEntry::NewDay(d) => {
-                *date.borrow_mut() = d;
+            RawEntry::NewDay(ref d) => {
+                *date.borrow_mut() = d.clone();
                 next_entry = new_entry();
                 next_entry.desc = "New day".to_string();
                 None
             }
-            RawEntry::Action(s) => {
+            RawEntry::Action(ref s) => {
                 let entry = mem::replace(&mut next_entry, new_entry());
-                next_entry.desc = s;
+                next_entry.desc = s.clone();
                 Some(entry)
             }
             RawEntry::Time(h, m) => {
@@ -353,6 +360,7 @@ fn raw_to_entries(raws: Vec<RawEntry>) -> Vec<Entry> {
                 next_entry.pred = Some(Prediction(pl0, pn0, pl1, pn1));
                 None
             }
+            RawEntry::ClockIn | RawEntry::ClockOut => None,
         }
     }).collect();
 
@@ -360,3 +368,9 @@ fn raw_to_entries(raws: Vec<RawEntry>) -> Vec<Entry> {
 
     entries
 }
+
+
+
+// Time-sheet tracking
+
+
