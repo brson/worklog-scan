@@ -76,8 +76,6 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
     let raw_entries = lines.map(|ref s| line_to_raw_entry(s));
     let raw_entries: Vec<_> = raw_entries.collect();
 
-    println!();
-
     match mode {
         Mode::PleasureAndPain => {
             let entries = pp::raw_to_entries(&raw_entries);
@@ -87,8 +85,6 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
             tr::do_time_report(&raw_entries, start, end)?;
         }
     }
-
-    println!();
 
     Ok(())
 }

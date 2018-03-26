@@ -90,7 +90,9 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate) ->
                     }
                 }
                 RawEntry::Action(ref s) => {
-                    actions.push(s.to_string());
+                    if clock_in.is_some() {
+                        actions.push(s.to_string());
+                    }
                 }
                 RawEntry::NewDay(..) => unreachable!(),
                 RawEntry::Junk(..) |
@@ -123,14 +125,15 @@ fn print_report(start: NaiveDate, end: NaiveDate,
 
     println!("# Timesheet for Brian Anderson, {} - {}", start, end);
     println!();
-    println!("name: Brian Anderson");
-    println!("reporting period: {} - {}", start, end);
-    println!("total hours: {:.1}", total_hours);
+    println!("name: Brian Anderson  ");
+    println!("email: andersrb@gmail.com  ");
+    println!("reporting period: {} - {}  ", start, end);
+    println!("total hours: {:.1}  ", total_hours);
     println!();
     println!("## Details");
     println!();
     println!("| Date | Hours | Detail |");
-    println!("|------|-------|--------|");
+    println!("|:----:|:-----:|--------|");
 
     for &(date, hours, ref actions) in data {
         print!("| {} | {:2.1} | ", date, hours);
@@ -142,6 +145,8 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!("## Methodology");
     println!();
     println!("{}", METHODOLOGY);
+    println!("");
+    println!("{}", STYLE);
     
     Ok(())
 }
@@ -151,3 +156,26 @@ static METHODOLOGY: &str =
     records every task I do, however minute. Each row in the report \
     represents a period during which I was 'clocked in', rounded to \
     the nearest half-hour (up or down).";
+
+static STYLE: &str =
+    "
+<style>
+* {
+  font-family: sans-serif;
+  line-height: 1.3em;
+}
+
+body {
+  padding: 1em;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid black;
+  padding: 0.2em 1em 0.2em 1em;
+  vertical-align: top;
+}
+</style>";
