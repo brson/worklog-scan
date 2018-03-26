@@ -8,9 +8,13 @@ use std::fs::File;
 use std::io::{BufReader, BufRead};
 use errors::*;
 use regex::Regex;
+use chrono::*;
 
 mod pleasure_and_pain;
 use pleasure_and_pain as pp;
+
+mod time_reporting;
+use time_reporting as tr;
 
 mod errors {
     error_chain! {
@@ -27,7 +31,7 @@ fn main() {
 #[derive(Debug, Eq, PartialEq)]
 enum Mode {
     PleasureAndPain,
-    TimeReporting
+    TimeReporting(NaiveDate, NaiveDate),
 }
 
 fn run() -> Result<()> {
@@ -39,7 +43,20 @@ fn run() -> Result<()> {
             if mode == "pp" {
                 Mode::PleasureAndPain
             } else if mode == "tr" {
-                Mode::TimeReporting
+                let start = env::args().skip(3).next();
+                let end = env::args().skip(4).next();
+                match (start, end) {
+                    (Some(ref start), Some(ref end)) => {
+                        let start: ParseResult<NaiveDate> = NaiveDate::parse_from_str(start, "%Y-%m-%d");
+                        let end: ParseResult<NaiveDate> = NaiveDate::parse_from_str(end, "%Y-%m-%d");
+                        let start = start.map_err(|e| e.to_string())?;
+                        let end = end.map_err(|e| e.to_string())?;
+                        Mode::TimeReporting(start, end)
+                    }
+                    _ => {
+                        bail!("no start or end for time report");
+                    }
+                }
             } else {
                 bail!("unknown mode");
             }
@@ -61,11 +78,14 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
 
     println!();
 
-    if mode == Mode::PleasureAndPain {
-        let entries = pp::raw_to_entries(&raw_entries);
-        pp::analyze_prediction(&entries)?;
-    } else {
-        panic!()
+    match mode {
+        Mode::PleasureAndPain => {
+            let entries = pp::raw_to_entries(&raw_entries);
+            pp::analyze_prediction(&entries)?;
+        }
+        Mode::TimeReporting(start, end) => {
+            tr::do_time_report(&raw_entries, start, end)?;
+        }
     }
 
     println!();
@@ -76,10 +96,18 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
 // Determine what each individual line represents
 fn line_to_raw_entry(line: &str) -> RawEntry {
     if line.to_lowercase().contains("clockin") {
-        return RawEntry::ClockIn;
+        panic!("use 'clock in', not 'clockin'");
     }
 
     if line.to_lowercase().contains("clockout") {
+        panic!("use 'clock out', not 'clockout'");
+    }
+
+    if line.to_lowercase().contains("clock in") {
+        return RawEntry::ClockIn;
+    }
+
+    if line.to_lowercase().contains("clock out") {
         return RawEntry::ClockOut;
     }
 
