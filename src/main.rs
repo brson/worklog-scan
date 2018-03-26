@@ -24,17 +24,34 @@ fn main() {
     run().unwrap();
 }
 
+#[derive(Debug, Eq, PartialEq)]
+enum Mode {
+    PleasureAndPain,
+    TimeReporting
+}
+
 fn run() -> Result<()> {
     let file = env::args().skip(1).next();
 
     if let Some(ref file) = file {
-        process_file(file)
-    } else {
-        bail!("no error");
+        let mode = env::args().skip(2).next();
+        let mode = if let Some(ref mode) = mode {
+            if mode == "pp" {
+                Mode::PleasureAndPain
+            } else if mode == "tr" {
+                Mode::TimeReporting
+            } else {
+                bail!("unknown mode");
+            }
+        } else {
+            bail!("no mode");
+        };
+        process_file(file, mode)    } else {
+        bail!("no file");
     }
 }
 
-fn process_file(file: &str) -> Result<()> {
+fn process_file(file: &str, mode: Mode) -> Result<()> {
     let lines = BufReader::new(File::open(file)?)
         .lines()
         .filter_map(|l| l.ok());
@@ -43,9 +60,13 @@ fn process_file(file: &str) -> Result<()> {
     let raw_entries: Vec<_> = raw_entries.collect();
 
     println!();
-    
-    let entries = pp::raw_to_entries(&raw_entries);
-    pp::analyze_prediction(&entries)?;
+
+    if mode == Mode::PleasureAndPain {
+        let entries = pp::raw_to_entries(&raw_entries);
+        pp::analyze_prediction(&entries)?;
+    } else {
+        panic!()
+    }
 
     println!();
 
