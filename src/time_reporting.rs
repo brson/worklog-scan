@@ -126,7 +126,8 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!("# Timesheet for Brian Anderson");
     println!();
     println!("name: Brian Anderson  ");
-    println!("email: andersrb@gmail.com  ");
+    println!("email: andersrb@gmail.com / v.brian.anderson@reddit.com  ");
+    println!("manager: Chris Slowe <chris@reddit.com>");
     println!("reporting period: {} - {}  ", start, end);
     println!("total hours: {:.1}  ", total_hours);
     println!();
@@ -177,5 +178,9 @@ th, td {
   border: 1px solid black;
   padding: 0.2em 1em 0.2em 1em;
   vertical-align: top;
+}
+
+a, a:visited {
+  color: blue;
 }
 </style>";
