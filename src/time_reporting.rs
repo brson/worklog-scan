@@ -131,6 +131,10 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!("reporting period: {} - {}  ", start, end);
     println!("total hours: {:.1}  ", total_hours);
     println!();
+    println!("## TL;DR");
+    println!();
+    println!("TODO fill-me-in");
+    println!();
     println!("## Details");
     println!();
     println!("| Date | Hours | Detail |");
