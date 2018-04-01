@@ -127,7 +127,7 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!();
     println!("name: Brian Anderson  ");
     println!("email: andersrb@gmail.com / v.brian.anderson@reddit.com  ");
-    println!("manager: Chris Slowe <chris@reddit.com>");
+    println!("manager: Chris Slowe <chris@reddit.com>  ");
     println!("reporting period: {} - {}  ", start, end);
     println!("total hours: {:.1}  ", total_hours);
     println!();
