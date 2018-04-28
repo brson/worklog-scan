@@ -123,6 +123,8 @@ fn print_report(start: NaiveDate, end: NaiveDate,
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
 
+    println!("{}", STYLE);
+    println!("");
     println!("# Timesheet for Brian Anderson");
     println!();
     println!("name: Brian Anderson  ");
@@ -150,8 +152,6 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!("## Methodology");
     println!();
     println!("{}", METHODOLOGY);
-    println!("");
-    println!("{}", STYLE);
     
     Ok(())
 }
