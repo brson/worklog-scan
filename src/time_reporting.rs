@@ -122,6 +122,8 @@ fn print_report(start: NaiveDate, end: NaiveDate,
                 data: &[(NaiveDate, Hours, Vec<Action>)]) -> Result<()> {
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
+    let hourly_rate = 190.0;
+    let amount_due = hourly_rate * total_hours;
 
     println!("{}", STYLE);
     println!("");
@@ -132,6 +134,8 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!("manager: Chris Slowe <chris@reddit.com>  ");
     println!("reporting period: {} - {}  ", start, end);
     println!("total hours: {:.1}  ", total_hours);
+    println!("hourly rate: ${:.0}  ", hourly_rate);
+    println!("amount due: ${}  ", amount_due);
     println!();
     println!("## TL;DR");
     println!();
