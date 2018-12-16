@@ -225,6 +225,7 @@ pub fn raw_to_entries(raws: &[RawEntry]) -> Vec<Entry> {
                 None
             }
             RawEntry::ClockIn | RawEntry::ClockOut => None,
+            RawEntry::Expense(..) => None,
         }
     }).collect();
 

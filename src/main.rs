@@ -119,6 +119,7 @@ fn line_to_raw_entry(line: &str) -> RawEntry {
     }
 
     let line = &line[2..];
+    let line = line.trim();
 
     if let Some(time) = parse_time(line) {
         return RawEntry::Time(time.0, time.1);
@@ -126,6 +127,10 @@ fn line_to_raw_entry(line: &str) -> RawEntry {
 
     if let Some(ppp) = parse_prediction(line) {
         return RawEntry::Prediction(ppp.0, ppp.1, ppp.2, ppp.3);
+    }
+
+    if let Some((cost, what)) = parse_expense(line) {
+        return RawEntry::Expense(cost, what);
     }
 
     return RawEntry::Action(line.to_string());
@@ -141,6 +146,7 @@ pub enum RawEntry {
     Prediction(u8, u8, u8, u8),
     ClockIn,
     ClockOut,
+    Expense(f64, String),
 }
 
 fn parse_date(s: &str) -> Option<String> {
@@ -185,3 +191,19 @@ fn parse_prediction(s: &str) -> Option<(u8, u8, u8, u8)> {
         None
     }
 }
+
+fn parse_expense(s: &str) -> Option<(f64, String)> {
+    if !s.to_ascii_lowercase().starts_with("expense:") {
+        return None;
+    }
+
+    let regex = Regex::new(r"^Expense: *\$((?:\d|\.)*),(.*)").expect("");
+    if let Some(caps) = regex.captures(s) {
+        let cost: f64 = str::parse(&caps[1]).expect("float expense cost");
+        let what: String = caps[2].to_string();
+        return Some((cost, what));
+    } else {
+        panic!("malformed expense: {}", s);
+    }
+}
+

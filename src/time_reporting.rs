@@ -9,6 +9,12 @@ type Minutes = u32;
 type Action = String;
 type Hours = f64;
 
+struct Expense {
+    date: NaiveDate,
+    cost: f64,
+    what: String,
+}
+
 pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate) -> Result<()> {
     // Split entries by date, while recording dates of each subslice
     let mut dates = vec![String::new()];
@@ -50,6 +56,8 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate) ->
     let mut dated_timeslices: Vec<(NaiveDate, Minutes, Vec<Action>)> = vec![];
 
     let timestamp_to_minute_of_day = |h, m| (h as u32) * 60 + (m as u32);
+
+    let mut expenses = vec![];
     
     for (date, entries) in dated_entries.into_iter() {
         let mut clock_in: Option<MinuteOfDay> = None;
@@ -94,6 +102,9 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate) ->
                         actions.push(s.to_string());
                     }
                 }
+                RawEntry::Expense(cost, ref what) => {
+                    expenses.push(Expense { date, cost, what: what.to_string() });
+                }
                 RawEntry::NewDay(..) => unreachable!(),
                 RawEntry::Junk(..) |
                 RawEntry::Time(..) |
@@ -119,15 +130,17 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate) ->
             (date, hours, actions)
         }).collect();
 
-    print_report(start, end, &dated_timeslices)
+    print_report(start, end, &dated_timeslices, expenses)
 }
 
 fn print_report(start: NaiveDate, end: NaiveDate,
-                data: &[(NaiveDate, Hours, Vec<Action>)]) -> Result<()> {
+                data: &[(NaiveDate, Hours, Vec<Action>)],
+                expenses: Vec<Expense>) -> Result<()> {
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
     let hourly_rate = 200.0;
-    let amount_due = hourly_rate * total_hours;
+    let total_expenses = expenses.iter().fold(0.0, |total, expense| total + expense.cost);
+    let amount_due = hourly_rate * total_hours + total_expenses;
 
     println!("{}", STYLE);
     println!("");
@@ -138,8 +151,11 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!("manager: Kevin Xu <kevin@reddit.com>  ");
     println!("reporting period: {} - {}  ", start, end);
     println!("total hours: {:.1}  ", total_hours);
-    println!("hourly rate: ${:.0}  ", hourly_rate);
-    println!("amount due: ${}  ", amount_due);
+    println!("hourly rate: ${:}  ", hourly_rate);
+    if total_expenses > 0.0 {
+        println!("expenses: ${:.2}  ", total_expenses);
+    }
+    println!("amount due: ${:.2}  ", amount_due);
     println!();
     println!("## TL;DR");
     println!();
@@ -157,6 +173,22 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     }
 
     println!();
+
+    if total_expenses > 0.0 {
+        println!("## Expenses");
+        println!();
+        println!("| Date | Cost | Detail |");
+        println!("|:----:|:----:|--------|");
+
+        for expense in expenses {
+            println!("| {} | {} | {} ",
+                     expense.date, expense.cost, expense.what
+            );
+        }
+
+        println!();
+    }
+    
     println!("## Methodology");
     println!();
     println!("{}", METHODOLOGY);
