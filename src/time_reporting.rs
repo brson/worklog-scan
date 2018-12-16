@@ -100,6 +100,10 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate) ->
                 RawEntry::Prediction(..) => { }
             }
         }
+
+        if clock_in.is_some() {
+            bail!("clock-in without clock-out on {:?}", date);
+        }
     }
 
     // Round timeslices to half-hours
