@@ -15,7 +15,7 @@ struct Expense {
     what: String,
 }
 
-pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate) -> Result<()> {
+pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, company: Option<String>) -> Result<()> {
     // Split entries by date, while recording dates of each subslice
     let mut dates = vec![String::new()];
     let mut entry_days: Vec<_> = entries.split(|e| {
@@ -144,7 +144,7 @@ fn print_report(start: NaiveDate, end: NaiveDate,
 
     println!("{}", STYLE);
     println!("");
-    println!("# Invoice for Brian Anderson re MobileCoin");
+    println!("# Invoice for Brian Anderson");
     println!();
     println!("name: Brian Anderson  ");
     println!("email: andersrb@gmail.com  ");

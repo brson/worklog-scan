@@ -32,7 +32,7 @@ fn main() {
 #[derive(Debug, Eq, PartialEq)]
 enum Mode {
     PleasureAndPain,
-    TimeReporting(NaiveDate, NaiveDate),
+    TimeReporting(NaiveDate, NaiveDate, Option<String>),
 }
 
 fn run() -> Result<()> {
@@ -52,7 +52,8 @@ fn run() -> Result<()> {
                         let end: ParseResult<NaiveDate> = NaiveDate::parse_from_str(end, "%Y-%m-%d");
                         let start = start.map_err(|e| e.to_string())?;
                         let end = end.map_err(|e| e.to_string())?;
-                        Mode::TimeReporting(start, end)
+                        let company = env::args().skip(5).next();
+                        Mode::TimeReporting(start, end, company)
                     }
                     _ => {
                         bail!("no start or end for time report");
@@ -82,8 +83,8 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
             let entries = pp::raw_to_entries(&raw_entries);
             pp::analyze_prediction(&entries)?;
         }
-        Mode::TimeReporting(start, end) => {
-            tr::do_time_report(&raw_entries, start, end)?;
+        Mode::TimeReporting(start, end, company) => {
+            tr::do_time_report(&raw_entries, start, end, company)?;
         }
     }
 
