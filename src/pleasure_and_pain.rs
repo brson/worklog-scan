@@ -224,7 +224,7 @@ pub fn raw_to_entries(raws: &[RawEntry]) -> Vec<Entry> {
                 next_entry.pred = Some(Prediction(pl0, pn0, pl1, pn1));
                 None
             }
-            RawEntry::ClockIn | RawEntry::ClockOut => None,
+            RawEntry::ClockIn(..) | RawEntry::ClockOut(..) => None,
             RawEntry::Expense(..) => None,
         }
     }).collect();

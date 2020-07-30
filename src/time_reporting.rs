@@ -1,3 +1,7 @@
+// convert md output to html with
+//
+//     comrak -e table -e autolink --unsafe
+
 use chrono::*;
 use errors::*;
 use std::mem;
@@ -64,7 +68,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, co
         let mut actions: Vec<String> = vec![];
         for (i, entry) in entries.iter().enumerate() {
             match *entry {
-                RawEntry::ClockIn => {
+                RawEntry::ClockIn(ref c) if *c == company => {
                     if clock_in.is_some() {
                         bail!("clock-in without clock-out on {:?}", date);
                     }
@@ -75,7 +79,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, co
                         _ => bail!("clock-in not followed by timestamp on {:?}", date)
                     }
                 }
-                RawEntry::ClockOut => {
+                RawEntry::ClockOut(ref c) if *c == company => {
                     match clock_in {
                         Some(clock_in_) => {
                             match entries.get(i - 1) {
@@ -97,6 +101,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, co
                         _ => bail!("clock-out without clock-in on {:?}", date)
                     }
                 }
+                RawEntry::ClockIn(..) | RawEntry::ClockOut(..) => { }
                 RawEntry::Action(ref s) => {
                     if clock_in.is_some() {
                         actions.push(s.to_string());

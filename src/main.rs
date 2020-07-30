@@ -102,11 +102,13 @@ fn line_to_raw_entry(line: &str) -> RawEntry {
     }
 
     if line.to_lowercase().contains("clock in") {
-        return RawEntry::ClockIn;
+        let company = parse_company(line);
+        return RawEntry::ClockIn(company);
     }
 
     if line.to_lowercase().contains("clock out") {
-        return RawEntry::ClockOut;
+        let company = parse_company(line);
+        return RawEntry::ClockOut(company);
     }
 
     if line.starts_with("# ") {
@@ -138,6 +140,19 @@ fn line_to_raw_entry(line: &str) -> RawEntry {
     return RawEntry::Action(line.to_string());
 }
 
+fn parse_company(line: &str) -> Option<String> {
+    let open_paren_idx = line.rfind("(");
+    let close_paren_idx = line.rfind(")");
+    match (open_paren_idx, close_paren_idx) {
+        (Some(open_paren_idx), Some(close_paren_idx)) => {
+            let region = &line[open_paren_idx + 1 .. close_paren_idx];
+            let region = region.trim();
+            Some(region.to_string())
+        }
+        _ => None,
+    }
+}
+
 #[derive(Debug)]
 pub enum RawEntry {
     Junk(String),
@@ -146,8 +161,8 @@ pub enum RawEntry {
     Time(u8, u8), // hour (0-23), minute
     // predictud pleasure, pain, actual pleasure, pain
     Prediction(u8, u8, u8, u8),
-    ClockIn,
-    ClockOut,
+    ClockIn(Option<String>),
+    ClockOut(Option<String>),
     Expense(f64, String),
 }
 
