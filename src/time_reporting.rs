@@ -147,7 +147,7 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     println!("# Invoice for Brian Anderson re MobileCoin");
     println!();
     println!("name: Brian Anderson  ");
-    println!("email: andersrb@gmail.com");
+    println!("email: andersrb@gmail.com  ");
     println!("reporting period: {} - {}  ", start, end);
     println!("total hours: {:.1}  ", total_hours);
     println!("hourly rate: ${:}  ", hourly_rate);
