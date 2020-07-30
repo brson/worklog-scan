@@ -16,6 +16,7 @@ use pleasure_and_pain as pp;
 mod time_reporting;
 use time_reporting as tr;
 
+#[allow(deprecated)]
 mod errors {
     error_chain! {
         foreign_links {
