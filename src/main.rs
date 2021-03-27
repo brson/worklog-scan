@@ -2,6 +2,8 @@
 extern crate error_chain;
 extern crate regex;
 extern crate chrono;
+#[macro_use]
+extern crate lazy_static;
 
 use std::env;
 use std::fs::File;
@@ -74,8 +76,9 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
     let lines = BufReader::new(File::open(file)?)
         .lines()
         .filter_map(|l| l.ok());
+    let lines = lines.collect::<Vec<_>>();
 
-    let raw_entries = lines.map(|ref s| line_to_raw_entry(s));
+    let raw_entries = lines.iter().map(|ref s| line_to_raw_entry(s));
     let raw_entries: Vec<_> = raw_entries.collect();
 
     match mode {
@@ -93,20 +96,22 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
 
 // Determine what each individual line represents
 fn line_to_raw_entry(line: &str) -> RawEntry {
-    if line.to_lowercase().contains("clockin") {
+    let line_lcase = line.to_lowercase();
+
+    if line_lcase.contains("clockin") {
         panic!("use 'clock in', not 'clockin'");
     }
 
-    if line.to_lowercase().contains("clockout") {
+    if line_lcase.contains("clockout") {
         panic!("use 'clock out', not 'clockout'");
     }
 
-    if line.to_lowercase().contains("clock in") {
+    if line_lcase.contains("clock in") {
         let company = parse_company(line);
         return RawEntry::ClockIn(company);
     }
 
-    if line.to_lowercase().contains("clock out") {
+    if line_lcase.contains("clock out") {
         let company = parse_company(line);
         return RawEntry::ClockOut(company);
     }
@@ -167,8 +172,10 @@ pub enum RawEntry {
 }
 
 fn parse_date(s: &str) -> Option<String> {
-    let regex = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})").expect("");
-    if regex.is_match(s) {
+    lazy_static! {
+        static ref REGEX: Regex = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})").expect("");
+    }
+    if REGEX.is_match(s) {
         Some(s.to_string())
     } else {
         None
@@ -176,8 +183,10 @@ fn parse_date(s: &str) -> Option<String> {
 }
 
 fn parse_time(s: &str) -> Option<(u8, u8)> {
-    let regex = Regex::new(r"^(\d{1,2}):(\d{2}) (AM|PM)").expect("");
-    if let Some(caps) = regex.captures(s) {
+    lazy_static! {
+        static ref REGEX: Regex = Regex::new(r"^(\d{1,2}):(\d{2}) (AM|PM)").expect("");
+    }
+    if let Some(caps) = REGEX.captures(s) {
         let mut hour: u8 = str::parse(&caps[1]).expect("");
         let minute: u8 = str::parse(&caps[2]).expect("");
         let am_pm = &caps[3];
@@ -197,8 +206,10 @@ fn parse_time(s: &str) -> Option<(u8, u8)> {
 }
 
 fn parse_prediction(s: &str) -> Option<(u8, u8, u8, u8)> {
-    let regex = Regex::new(r"^(\d+)/(\d+):(\d+)/(\d+)").expect("");
-    if let Some(caps) = regex.captures(s) {
+    lazy_static! {
+        static ref REGEX: Regex = Regex::new(r"^(\d+)/(\d+):(\d+)/(\d+)").expect("");
+    }
+    if let Some(caps) = REGEX.captures(s) {
         let pr_pl: u8 = str::parse(&caps[1]).expect("");
         let pr_pn: u8 = str::parse(&caps[2]).expect("");
         let ac_pl: u8 = str::parse(&caps[3]).expect("");
@@ -214,8 +225,10 @@ fn parse_expense(s: &str) -> Option<(f64, String)> {
         return None;
     }
 
-    let regex = Regex::new(r"^Expense: *\$((?:\d|\.)*),(.*)").expect("");
-    if let Some(caps) = regex.captures(s) {
+    lazy_static! {
+        static ref REGEX: Regex = Regex::new(r"^Expense: *\$((?:\d|\.)*),(.*)").expect("");
+    }
+    if let Some(caps) = REGEX.captures(s) {
         let cost: f64 = str::parse(&caps[1]).expect("float expense cost");
         let what: String = caps[2].to_string();
         return Some((cost, what));

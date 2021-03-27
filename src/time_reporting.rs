@@ -1,3 +1,7 @@
+// run with
+//
+//     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 Nervos
+//
 // convert md output to html with
 //
 //     comrak -e table -e autolink --unsafe
