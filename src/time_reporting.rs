@@ -154,6 +154,7 @@ fn print_report(start: NaiveDate, end: NaiveDate,
     let total_expenses = expenses.iter().fold(0.0, |total, expense| total + expense.cost);
     let amount_due = hourly_rate * total_hours + total_expenses;
 
+    println!("<meta charset='utf-8'>");
     println!("{}", STYLE);
     println!("");
     println!("# Invoice for {}", self_name);
