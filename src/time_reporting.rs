@@ -1,6 +1,6 @@
 // run with
 //
-//     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 "Common Orbit LLC" Nervos "Decrypted Sapiens" 1 > outputfile.md
+//     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 "Common Orbit LLC" Nervos "Decrypted Sapiens" 1 2021-03-28 2021-04-15 > outputfile.md
 //
 // convert md output to html with
 //
@@ -25,7 +25,7 @@ struct Expense {
 
 pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
                       self_name: String, project: Option<String>, client: Option<String>,
-                      invoice_no: Option<u32>) -> Result<()> {
+                      invoice_no: Option<u32>, issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
     // Split entries by date, while recording dates of each subslice
     let mut dates = vec![String::new()];
     let mut entry_days: Vec<_> = entries.split(|e| {
@@ -141,7 +141,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
             (date, hours, actions)
         }).collect();
 
-    print_report(start, end, &dated_timeslices, expenses, self_name, client, invoice_no)
+    print_report(start, end, &dated_timeslices, expenses, self_name, client, invoice_no, issue_date, due_date)
 }
 
 fn print_report(start: NaiveDate, end: NaiveDate,
@@ -149,7 +149,8 @@ fn print_report(start: NaiveDate, end: NaiveDate,
                 expenses: Vec<Expense>,
                 self_name: String,
                 client: Option<String>,
-                invoice_no: Option<u32>) -> Result<()> {
+                invoice_no: Option<u32>,
+                issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
     let hourly_rate = 200.0;
@@ -170,6 +171,12 @@ fn print_report(start: NaiveDate, end: NaiveDate,
         println!("invoice number: {}  ", invoice_no);
     }
     println!("reporting period: {} - {}  ", start, end);
+    if let Some(issue_date) = issue_date {
+        println!("issue date: {}  ", issue_date);
+    }
+    if let Some(due_date) = due_date {
+        println!("due date: {}  ", due_date);
+    }
     println!("total hours: {:.1}  ", total_hours);
     println!("hourly rate: ${:}  ", hourly_rate);
     if total_expenses > 0.0 {
