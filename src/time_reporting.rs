@@ -23,7 +23,8 @@ struct Expense {
     what: String,
 }
 
-pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, company: Option<String>) -> Result<()> {
+pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
+                      self_name: String, client: Option<String>) -> Result<()> {
     // Split entries by date, while recording dates of each subslice
     let mut dates = vec![String::new()];
     let mut entry_days: Vec<_> = entries.split(|e| {
@@ -72,7 +73,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, co
         let mut actions: Vec<String> = vec![];
         for (i, entry) in entries.iter().enumerate() {
             match *entry {
-                RawEntry::ClockIn(ref c) if *c == company => {
+                RawEntry::ClockIn(ref c) if *c == client => {
                     if clock_in.is_some() {
                         bail!("clock-in without clock-out on {:?}", date);
                     }
@@ -83,7 +84,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, co
                         _ => bail!("clock-in not followed by timestamp on {:?}", date)
                     }
                 }
-                RawEntry::ClockOut(ref c) if *c == company => {
+                RawEntry::ClockOut(ref c) if *c == client => {
                     match clock_in {
                         Some(clock_in_) => {
                             match entries.get(i - 1) {
@@ -139,12 +140,14 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, co
             (date, hours, actions)
         }).collect();
 
-    print_report(start, end, &dated_timeslices, expenses)
+    print_report(start, end, &dated_timeslices, expenses, self_name, client)
 }
 
 fn print_report(start: NaiveDate, end: NaiveDate,
                 data: &[(NaiveDate, Hours, Vec<Action>)],
-                expenses: Vec<Expense>) -> Result<()> {
+                expenses: Vec<Expense>,
+                self_name: String,
+                client: Option<String>) -> Result<()> {
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
     let hourly_rate = 200.0;
@@ -153,10 +156,13 @@ fn print_report(start: NaiveDate, end: NaiveDate,
 
     println!("{}", STYLE);
     println!("");
-    println!("# Invoice for Brian Anderson");
+    println!("# Invoice for {}", self_name);
     println!();
-    println!("name: Brian Anderson  ");
+    println!("name: {}  ", self_name);
     println!("email: andersrb@gmail.com  ");
+    if let Some(client) = client {
+        println!("client: {}  ", client);
+    }
     println!("reporting period: {} - {}  ", start, end);
     println!("total hours: {:.1}  ", total_hours);
     println!("hourly rate: ${:}  ", hourly_rate);
