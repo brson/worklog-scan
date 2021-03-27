@@ -34,7 +34,7 @@ fn main() {
 #[derive(Debug, Eq, PartialEq)]
 enum Mode {
     PleasureAndPain,
-    TimeReporting(NaiveDate, NaiveDate, String, Option<String>),
+    TimeReporting(NaiveDate, NaiveDate, String, Option<String>, Option<String>),
 }
 
 fn run() -> Result<()> {
@@ -55,8 +55,10 @@ fn run() -> Result<()> {
                         let start = start.map_err(|e| e.to_string())?;
                         let end = end.map_err(|e| e.to_string())?;
                         let self_name = env::args().skip(5).next().expect("self-name");
-                        let client = env::args().skip(6).next();
-                        Mode::TimeReporting(start, end, self_name, client)
+                        let project = env::args().skip(6).next();
+                        let client = env::args().skip(7).next();
+                        let client = client.clone().or_else(|| project.clone());
+                        Mode::TimeReporting(start, end, self_name, project, client)
                     }
                     _ => {
                         bail!("no start or end for time report");
@@ -87,8 +89,8 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
             let entries = pp::raw_to_entries(&raw_entries);
             pp::analyze_prediction(&entries)?;
         }
-        Mode::TimeReporting(start, end, self_name, client) => {
-            tr::do_time_report(&raw_entries, start, end, self_name, client)?;
+        Mode::TimeReporting(start, end, self_name, project, client) => {
+            tr::do_time_report(&raw_entries, start, end, self_name, project, client)?;
         }
     }
 

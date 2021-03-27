@@ -1,6 +1,6 @@
 // run with
 //
-//     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 Nervos
+//     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 "Common Orbit LLC" Nervos "Decrypted Sapiens" > outputfile.md
 //
 // convert md output to html with
 //
@@ -24,7 +24,7 @@ struct Expense {
 }
 
 pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
-                      self_name: String, client: Option<String>) -> Result<()> {
+                      self_name: String, project: Option<String>, client: Option<String>) -> Result<()> {
     // Split entries by date, while recording dates of each subslice
     let mut dates = vec![String::new()];
     let mut entry_days: Vec<_> = entries.split(|e| {
@@ -73,7 +73,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
         let mut actions: Vec<String> = vec![];
         for (i, entry) in entries.iter().enumerate() {
             match *entry {
-                RawEntry::ClockIn(ref c) if *c == client => {
+                RawEntry::ClockIn(ref c) if *c == project => {
                     if clock_in.is_some() {
                         bail!("clock-in without clock-out on {:?}", date);
                     }
@@ -84,7 +84,7 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
                         _ => bail!("clock-in not followed by timestamp on {:?}", date)
                     }
                 }
-                RawEntry::ClockOut(ref c) if *c == client => {
+                RawEntry::ClockOut(ref c) if *c == project => {
                     match clock_in {
                         Some(clock_in_) => {
                             match entries.get(i - 1) {
