@@ -5,6 +5,9 @@
 // convert md output to html with
 //
 //     comrak -e table -e autolink --unsafe
+//
+// print ds-style output by setting OUTPUT=DS
+
 
 use chrono::*;
 use errors::*;
@@ -12,6 +15,7 @@ use std::mem;
 use std::fmt::Display;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::env;
 
 use RawEntry;
 
@@ -147,6 +151,8 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
     print_report(start, end, &dated_timeslices, expenses, self_name, client, invoice_no, issue_date, due_date)
 }
 
+static RATE: f64 = 200.0;
+
 fn print_report(start: NaiveDate, end: NaiveDate,
                 data: &[(NaiveDate, Hours, Vec<Action>)],
                 expenses: Vec<Expense>,
@@ -154,15 +160,29 @@ fn print_report(start: NaiveDate, end: NaiveDate,
                 client: Option<String>,
                 invoice_no: Option<u32>,
                 issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
+    let style = env::var("OUTPUT").unwrap_or("normal".to_string());
+    if style == "ds" {
+        print_report_ds(start, end, data, expenses, self_name, client, invoice_no, issue_date, due_date)
+    } else {
+        print_report_normal(start, end, data, expenses, self_name, client, invoice_no, issue_date, due_date)
+    }
+}
+
+fn print_report_normal(start: NaiveDate, end: NaiveDate,
+                       data: &[(NaiveDate, Hours, Vec<Action>)],
+                       expenses: Vec<Expense>,
+                       self_name: String,
+                       client: Option<String>,
+                       invoice_no: Option<u32>,
+                       issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
 
     fn print_table_row_2(v1: impl Display, v2: impl Display) {
         println!("<tr><td>{}</td><td>{}</td></tr>", v1, v2);
     }
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
-    let hourly_rate = 200.0;
     let total_expenses = expenses.iter().fold(0.0, |total, expense| total + expense.cost);
-    let amount_due = hourly_rate * total_hours + total_expenses;
+    let amount_due = RATE * total_hours + total_expenses;
 
     println!("<!doctype html>");
     println!("<meta charset='utf-8'>");
@@ -187,7 +207,7 @@ fn print_report(start: NaiveDate, end: NaiveDate,
         print_table_row_2("due date:", due_date);
     }
     print_table_row_2("total hours:", format!("{:.1}", total_hours));
-    print_table_row_2("hourly rate:", format!("${:}", hourly_rate));
+    print_table_row_2("hourly rate:", format!("${:}", RATE));
     if total_expenses > 0.0 {
         print_table_row_2("expenses:", format!("${:.2}", total_expenses));
     }
@@ -216,6 +236,100 @@ fn print_report(start: NaiveDate, end: NaiveDate,
             println!("<p>{}</p>", action);
         }
         println!("</td>");
+        println!("</tr>");
+    }
+
+    println!("</table>");
+    println!();
+
+    if total_expenses > 0.0 {
+        println!("<h2>Expenses</h2>");
+        println!();
+        println!("<table>");
+        println!("<tr><th>Date</th><th>Cost</th><th>Detail</th></tr>");
+
+        for expense in expenses {
+            println!("<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
+                     expense.date, expense.cost, expense.what);
+        }
+
+        println!("</table>");
+        println!();
+    }
+    
+    Ok(())
+}
+
+fn print_report_ds(start: NaiveDate, end: NaiveDate,
+                   data: &[(NaiveDate, Hours, Vec<Action>)],
+                   expenses: Vec<Expense>,
+                   self_name: String,
+                   client: Option<String>,
+                   invoice_no: Option<u32>,
+                   issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
+
+    fn print_table_row_2(v1: impl Display, v2: impl Display) {
+        println!("<tr><td>{}</td><td>{}</td></tr>", v1, v2);
+    }
+
+    let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
+    let total_expenses = expenses.iter().fold(0.0, |total, expense| total + expense.cost);
+    let amount_due = RATE * total_hours + total_expenses;
+
+    println!("<!doctype html>");
+    println!("<meta charset='utf-8'>");
+    println!("{}", STYLE);
+    println!("");
+    println!("<h1>Invoice from {}</h1>", self_name);
+    println!();
+    println!("<table>");
+    print_table_row_2("name:", self_name);
+    print_table_row_2("email:", "andersrb@gmail.com");
+    if let Some(client) = client {
+        print_table_row_2("client:", client);
+    }
+    if let Some(invoice_no) = invoice_no {
+        print_table_row_2("invoice number:", invoice_no);
+    }
+    print_table_row_2("reporting period:", format!("{} - {}", start, end));
+    if let Some(issue_date) = issue_date {
+        print_table_row_2("issue date:", issue_date);
+    }
+    if let Some(due_date) = due_date {
+        print_table_row_2("due date:", due_date);
+    }
+    print_table_row_2("total hours:", format!("{:.1}", total_hours));
+    print_table_row_2("hourly rate:", format!("${:}", RATE));
+    if total_expenses > 0.0 {
+        print_table_row_2("expenses:", format!("${:.2}", total_expenses));
+    }
+    print_table_row_2("amount due:", format!("${:.2}", amount_due));
+    println!("</table>");
+    println!();
+
+    println!("<h2>TL;DR</h2>");
+    println!();
+    println!("<p>");
+    println!("TODO fill-me-in");
+    println!("</p>");
+    println!();
+
+    println!("<h2>Details</h2>");
+    println!();
+    println!("<table>");
+    println!("<tr><th>Description</th><th>Hours</th><th>Rate</th><th>Cost</th></tr>");
+
+    for &(date, hours, ref actions) in data {
+        println!("<tr>");
+        println!("<td>");
+        println!("<p>{}</p>", date);
+        for action in actions {
+            let action = parse_md_link(action);
+            println!("<p>{}</p>", action);
+        }
+        println!("</td>");
+        println!("<td>{:2.1}</td><td>{}</td><td>{}</td>",
+                 hours, RATE, hours * RATE);
         println!("</tr>");
     }
 
