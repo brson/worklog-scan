@@ -9,6 +9,9 @@
 use chrono::*;
 use errors::*;
 use std::mem;
+use std::fmt::Display;
+use lazy_static::lazy_static;
+use regex::Regex;
 
 use RawEntry;
 
@@ -152,67 +155,85 @@ fn print_report(start: NaiveDate, end: NaiveDate,
                 invoice_no: Option<u32>,
                 issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
 
+    fn print_table_row_2(v1: impl Display, v2: impl Display) {
+        println!("<tr><td>{}</td><td>{}</td></tr>", v1, v2);
+    }
+
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
     let hourly_rate = 200.0;
     let total_expenses = expenses.iter().fold(0.0, |total, expense| total + expense.cost);
     let amount_due = hourly_rate * total_hours + total_expenses;
 
+    println!("<!doctype html>");
     println!("<meta charset='utf-8'>");
     println!("{}", STYLE);
     println!("");
-    println!("# Invoice for {}", self_name);
+    println!("<h1>Invoice from {}</h1>", self_name);
     println!();
-    println!("name: {}  ", self_name);
-    println!("email: andersrb@gmail.com  ");
+    println!("<table>");
+    print_table_row_2("name:", self_name);
+    print_table_row_2("email:", "andersrb@gmail.com");
     if let Some(client) = client {
-        println!("client: {}  ", client);
+        print_table_row_2("client:", client);
     }
     if let Some(invoice_no) = invoice_no {
-        println!("invoice number: {}  ", invoice_no);
+        print_table_row_2("invoice number:", invoice_no);
     }
-    println!("reporting period: {} - {}  ", start, end);
+    print_table_row_2("reporting period:", format!("{} - {}", start, end));
     if let Some(issue_date) = issue_date {
-        println!("issue date: {}  ", issue_date);
+        print_table_row_2("issue date:", issue_date);
     }
     if let Some(due_date) = due_date {
-        println!("due date: {}  ", due_date);
+        print_table_row_2("due date:", due_date);
     }
-    println!("total hours: {:.1}  ", total_hours);
-    println!("hourly rate: ${:}  ", hourly_rate);
+    print_table_row_2("total hours:", format!("{:.1}", total_hours));
+    print_table_row_2("hourly rate:", format!("${:}", hourly_rate));
     if total_expenses > 0.0 {
-        println!("expenses: ${:.2}  ", total_expenses);
+        print_table_row_2("expenses:", format!("${:.2}", total_expenses));
     }
-    println!("amount due: ${:.2}  ", amount_due);
+    print_table_row_2("amount due:", format!("${:.2}", amount_due));
+    println!("</table>");
     println!();
-    println!("## TL;DR");
+
+    println!("<h2>TL;DR</h2>");
     println!();
+    println!("<p>");
     println!("TODO fill-me-in");
+    println!("</p>");
     println!();
-    println!("## Details");
+
+    println!("<h2>Details</h2>");
     println!();
-    println!("| Date | Hours | Detail |");
-    println!("|:----:|:-----:|--------|");
+    println!("<table>");
+    println!("<tr><th>Date</th><th>Hours</th><th>Detail</th></tr>");
 
     for &(date, hours, ref actions) in data {
-        print!("| {} | {:2.1} | ", date, hours);
-        let linebreak_actions = actions.join(" <br> ");
-        println!("{} |", linebreak_actions);
+        println!("<tr>");
+        println!("<td>{}</td><td>{:2.1}</td>", date, hours);
+        println!("<td>");
+        for action in actions {
+            let action = parse_md_link(action);
+            println!("<p>{}</p>", action);
+        }
+        println!("</td>");
+        println!("</tr>");
     }
 
+    println!("</table>");
     println!();
 
     if total_expenses > 0.0 {
-        println!("## Expenses");
+        println!("<h2>Expenses</h2>");
         println!();
-        println!("| Date | Cost | Detail |");
-        println!("|:----:|:----:|--------|");
+        println!("<table>");
+        println!("<tr><th>Date</th><th>Cost</th><th>Detail</th></tr>");
 
         for expense in expenses {
-            println!("| {} | {} | {} ",
-                     expense.date, expense.cost, expense.what
-            );
+            println!("<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
+                     expense.date, expense.cost, expense.what);
         }
 
+        println!("</table>");
         println!();
     }
     
@@ -241,7 +262,29 @@ th, td {
   vertical-align: top;
 }
 
+td p {
+  margin: 0;
+}
+
 a, a:visited {
   color: blue;
 }
 </style>";
+
+fn parse_md_link(text: &str) -> String {
+    lazy_static! {
+        static ref REGEX: Regex = Regex::new(r"^(.*)\[(.*)\]\((.*)\)(.*)$").unwrap();
+    }
+
+    let caps = REGEX.captures(text);
+    if let Some(caps) = caps {
+        let pre = &caps[1];
+        let text = &caps[2];
+        let link = &caps[3];
+        let post = &caps[4];
+        format!("{}<a href='{}'>{}</a>{}",
+                pre, link, text, post)
+    } else {
+        text.to_string()
+    }
+}
