@@ -2,10 +2,6 @@
 //
 //     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 "Common Orbit LLC" Nervos "Decrypted Sapiens" 1 2021-03-28 2021-04-15 > outputfile.md
 //
-// convert md output to html with
-//
-//     comrak -e table -e autolink --unsafe
-//
 // print ds-style output by setting OUTPUT=DS
 
 
