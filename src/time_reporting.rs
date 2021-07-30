@@ -1,6 +1,6 @@
 // run with
 //
-//     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 "Common Orbit LLC" Nervos "Decrypted Sapiens" 1 2021-03-28 2021-04-15 > outputfile.md
+//     cargo run -- ~/brson.github.com/worklog.md tr 2021-02-01 2021-02-28 200 "Common Orbit LLC" Nervos "Decrypted Sapiens" 1 2021-03-28 2021-04-15 > outputfile.md
 //
 // print ds-style output by setting OUTPUT=DS
 
@@ -26,7 +26,7 @@ struct Expense {
     what: String,
 }
 
-pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
+pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate, rate: f64,
                       self_name: String, project: Option<String>, client: Option<String>,
                       invoice_no: Option<u32>, issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
     // Split entries by date, while recording dates of each subslice
@@ -144,12 +144,10 @@ pub fn do_time_report(entries: &[RawEntry], start: NaiveDate, end: NaiveDate,
             (date, hours, actions)
         }).collect();
 
-    print_report(start, end, &dated_timeslices, expenses, self_name, client, invoice_no, issue_date, due_date)
+    print_report(start, end, rate, &dated_timeslices, expenses, self_name, client, invoice_no, issue_date, due_date)
 }
 
-static RATE: f64 = 200.0;
-
-fn print_report(start: NaiveDate, end: NaiveDate,
+fn print_report(start: NaiveDate, end: NaiveDate, rate: f64,
                 data: &[(NaiveDate, Hours, Vec<Action>)],
                 expenses: Vec<Expense>,
                 self_name: String,
@@ -158,13 +156,13 @@ fn print_report(start: NaiveDate, end: NaiveDate,
                 issue_date: Option<NaiveDate>, due_date: Option<NaiveDate>) -> Result<()> {
     let style = env::var("OUTPUT").unwrap_or("normal".to_string());
     if style == "ds" {
-        print_report_ds(start, end, data, expenses, self_name, client, invoice_no, issue_date, due_date)
+        print_report_ds(start, end, rate, data, expenses, self_name, client, invoice_no, issue_date, due_date)
     } else {
-        print_report_normal(start, end, data, expenses, self_name, client, invoice_no, issue_date, due_date)
+        print_report_normal(start, end, rate, data, expenses, self_name, client, invoice_no, issue_date, due_date)
     }
 }
 
-fn print_report_normal(start: NaiveDate, end: NaiveDate,
+fn print_report_normal(start: NaiveDate, end: NaiveDate, rate: f64,
                        data: &[(NaiveDate, Hours, Vec<Action>)],
                        expenses: Vec<Expense>,
                        self_name: String,
@@ -178,7 +176,7 @@ fn print_report_normal(start: NaiveDate, end: NaiveDate,
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
     let total_expenses = expenses.iter().fold(0.0, |total, expense| total + expense.cost);
-    let amount_due = RATE * total_hours + total_expenses;
+    let amount_due = rate * total_hours + total_expenses;
 
     println!("<!doctype html>");
     println!("<meta charset='utf-8'>");
@@ -203,7 +201,7 @@ fn print_report_normal(start: NaiveDate, end: NaiveDate,
         print_table_row_2("due date:", due_date);
     }
     print_table_row_2("total hours:", format!("{:.1}", total_hours));
-    print_table_row_2("hourly rate:", format!("${:}", RATE));
+    print_table_row_2("hourly rate:", format!("${:}", rate));
     if total_expenses > 0.0 {
         print_table_row_2("expenses:", format!("${:.2}", total_expenses));
     }
@@ -256,7 +254,7 @@ fn print_report_normal(start: NaiveDate, end: NaiveDate,
     Ok(())
 }
 
-fn print_report_ds(start: NaiveDate, end: NaiveDate,
+fn print_report_ds(start: NaiveDate, end: NaiveDate, rate: f64,
                    data: &[(NaiveDate, Hours, Vec<Action>)],
                    expenses: Vec<Expense>,
                    self_name: String,
@@ -270,7 +268,7 @@ fn print_report_ds(start: NaiveDate, end: NaiveDate,
 
     let total_hours = data.iter().fold(0.0, |sum, &(_, hours, _)| sum + hours);
     let total_expenses = expenses.iter().fold(0.0, |total, expense| total + expense.cost);
-    let amount_due = RATE * total_hours + total_expenses;
+    let amount_due = rate * total_hours + total_expenses;
 
     println!("<!doctype html>");
     println!("<meta charset='utf-8'>");
@@ -295,7 +293,7 @@ fn print_report_ds(start: NaiveDate, end: NaiveDate,
         print_table_row_2("due date:", due_date);
     }
     print_table_row_2("total hours:", format!("{:.1}", total_hours));
-    print_table_row_2("hourly rate:", format!("${:}", RATE));
+    print_table_row_2("hourly rate:", format!("${:}", rate));
     if total_expenses > 0.0 {
         print_table_row_2("expenses:", format!("${:.2}", total_expenses));
     }
@@ -325,7 +323,7 @@ fn print_report_ds(start: NaiveDate, end: NaiveDate,
         }
         println!("</td>");
         println!("<td>{:2.1}</td><td>{}</td><td>{}</td>",
-                 hours, RATE, hours * RATE);
+                 hours, rate, hours * rate);
         println!("</tr>");
     }
 

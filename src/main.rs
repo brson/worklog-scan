@@ -8,6 +8,7 @@ extern crate lazy_static;
 use std::env;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
+use std::str::FromStr;
 use errors::*;
 use regex::Regex;
 use chrono::*;
@@ -31,10 +32,10 @@ fn main() {
     run().unwrap();
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 enum Mode {
     PleasureAndPain,
-    TimeReporting(NaiveDate, NaiveDate, String, Option<String>, Option<String>, Option<u32>, Option<NaiveDate>, Option<NaiveDate>),
+    TimeReporting(NaiveDate, NaiveDate, f64, String, Option<String>, Option<String>, Option<u32>, Option<NaiveDate>, Option<NaiveDate>),
 }
 
 fn run() -> Result<()> {
@@ -54,14 +55,15 @@ fn run() -> Result<()> {
                         let end: ParseResult<NaiveDate> = NaiveDate::parse_from_str(end, "%Y-%m-%d");
                         let start = start.map_err(|e| e.to_string())?;
                         let end = end.map_err(|e| e.to_string())?;
-                        let self_name = env::args().skip(5).next().expect("self-name");
-                        let project = env::args().skip(6).next();
-                        let client = env::args().skip(7).next();
+                        let rate = f64::from_str(&env::args().skip(5).next().expect("rate")).expect("rate");
+                        let self_name = env::args().skip(6).next().expect("self-name");
+                        let project = env::args().skip(7).next();
+                        let client = env::args().skip(8).next();
                         let client = client.clone().or_else(|| project.clone());
-                        let invoice_no = env::args().skip(8).next().map(|s| s.parse().expect("invoice-no"));
-                        let issue_date = env::args().skip(9).next().map(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").expect("issue-date"));
-                        let due_date = env::args().skip(10).next().map(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").expect("issue-date"));
-                        Mode::TimeReporting(start, end, self_name, project, client, invoice_no, issue_date, due_date)
+                        let invoice_no = env::args().skip(9).next().map(|s| s.parse().expect("invoice-no"));
+                        let issue_date = env::args().skip(10).next().map(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").expect("issue-date"));
+                        let due_date = env::args().skip(11).next().map(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").expect("issue-date"));
+                        Mode::TimeReporting(start, end, rate, self_name, project, client, invoice_no, issue_date, due_date)
                     }
                     _ => {
                         bail!("no start or end for time report");
@@ -92,8 +94,8 @@ fn process_file(file: &str, mode: Mode) -> Result<()> {
             let entries = pp::raw_to_entries(&raw_entries);
             pp::analyze_prediction(&entries)?;
         }
-        Mode::TimeReporting(start, end, self_name, project, client, invoice_no, issue_date, due_date) => {
-            tr::do_time_report(&raw_entries, start, end, self_name, project, client, invoice_no, issue_date, due_date)?;
+        Mode::TimeReporting(start, end, rate, self_name, project, client, invoice_no, issue_date, due_date) => {
+            tr::do_time_report(&raw_entries, start, end, rate, self_name, project, client, invoice_no, issue_date, due_date)?;
         }
     }
 
