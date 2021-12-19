@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::mem;
 use std::cell::RefCell;
 
