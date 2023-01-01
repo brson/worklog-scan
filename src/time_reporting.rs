@@ -209,7 +209,7 @@ fn print_report_normal(start: NaiveDate, end: NaiveDate, rate: f64,
     println!("</table>");
     println!();
 
-    println!("<h2>TL;DR</h2>");
+    println!("<h2>Summary</h2>");
     println!();
     println!("<p>");
     println!("TODO fill-me-in");
