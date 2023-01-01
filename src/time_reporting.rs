@@ -201,11 +201,11 @@ fn print_report_normal(start: NaiveDate, end: NaiveDate, rate: f64,
         print_table_row_2("due date:", due_date);
     }
     print_table_row_2("total hours:", format!("{:.1}", total_hours));
-    print_table_row_2("hourly rate:", format!("${:}", rate));
+    print_table_row_2("hourly rate:", format!("{:} USD", rate));
     if total_expenses > 0.0 {
-        print_table_row_2("expenses:", format!("${:.2}", total_expenses));
+        print_table_row_2("expenses:", format!("{:.2} USD", total_expenses));
     }
-    print_table_row_2("amount due:", format!("${:.2}", amount_due));
+    print_table_row_2("amount due:", format!("{:.2} USD", amount_due));
     println!("</table>");
     println!();
 
@@ -293,11 +293,11 @@ fn print_report_ds(start: NaiveDate, end: NaiveDate, rate: f64,
         print_table_row_2("due date:", due_date);
     }
     print_table_row_2("total hours:", format!("{:.1}", total_hours));
-    print_table_row_2("hourly rate:", format!("${:}", rate));
+    print_table_row_2("hourly rate:", format!("{:} USD", rate));
     if total_expenses > 0.0 {
-        print_table_row_2("expenses:", format!("${:.2}", total_expenses));
+        print_table_row_2("expenses:", format!("{:.2} USD", total_expenses));
     }
-    print_table_row_2("amount due:", format!("${:.2}", amount_due));
+    print_table_row_2("amount due:", format!("{:.2} USD", amount_due));
     println!("</table>");
     println!();
 
